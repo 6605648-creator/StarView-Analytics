@@ -1,0 +1,188 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>StarView Analytics</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{--bg:#0a0e1a;--s1:#121830;--s2:#1a2244;--line:rgba(255,255,255,.09);--tx:#f3f5fc;--mu:#93a0c4;--blue:#2d7bff;--blue2:#5aa2ff;--hi:#ff4d6a;--mid:#ffb02e;--lo:#1fd1b0;--f:"Plus Jakarta Sans","Segoe UI",system-ui,sans-serif}
+*{box-sizing:border-box}html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.5 var(--f);min-height:100vh}
+button,select,input{font:inherit;color:inherit}button{cursor:pointer}
+:focus-visible{outline:2px solid var(--blue2);outline-offset:2px}
+.nav{position:fixed;inset:0 0 auto 0;z-index:30;display:flex;align-items:center;gap:30px;padding:14px 4vw;background:linear-gradient(180deg,rgba(10,14,26,.92),rgba(10,14,26,0));transition:background .3s}
+.nav.solid{background:rgba(10,14,26,.96);box-shadow:0 1px 0 var(--line)}
+.brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:20px;letter-spacing:-.03em}
+.brand svg{width:34px;height:34px}.brand em{font-style:normal;font-weight:500;color:var(--mu);font-size:14px;letter-spacing:0}
+#tabs{display:flex;gap:22px;flex:1;flex-wrap:wrap}
+#tabs button{background:none;border:0;border-bottom:2px solid transparent;padding:8px 0;color:var(--mu);font-weight:600;transition:color .2s}
+#tabs button:hover{color:var(--tx)}#tabs button.on{color:var(--tx);border-color:var(--blue)}
+.filters{display:flex;gap:8px}
+select{background:rgba(255,255,255,.07);border:1px solid var(--line);border-radius:99px;padding:7px 14px;appearance:none}
+select option{background:var(--s1)}
+.page{display:none}.page.on{display:block}
+.hero{--h:265;position:relative;min-height:min(88vh,740px);display:flex;align-items:flex-end;padding:0 4vw 100px;overflow:hidden}
+.hero::before{content:"";position:absolute;inset:0;background:radial-gradient(900px 540px at 78% 32%,hsl(var(--h) 85% 50%/.5),transparent 65%),radial-gradient(600px 420px at 96% 85%,hsl(calc(var(--h) + 40) 80% 42%/.35),transparent 70%),linear-gradient(135deg,hsl(var(--h) 55% 15%),var(--bg) 72%)}
+.hero::after{content:"";position:absolute;inset:auto 0 0 0;height:45%;background:linear-gradient(0deg,var(--bg),transparent)}
+.wm{position:absolute;right:3vw;top:50%;transform:translateY(-52%);font-size:clamp(160px,30vw,440px);font-weight:800;line-height:.8;letter-spacing:-.06em;color:transparent;-webkit-text-stroke:2px hsl(var(--h) 85% 72%/.28);pointer-events:none;user-select:none}
+.hb{position:relative;z-index:2;max-width:640px;transition:opacity .26s,transform .26s}.hb.out{opacity:0;transform:translateY(10px)}
+.rank{display:inline-block;background:rgba(255,255,255,.12);backdrop-filter:blur(6px);border-radius:8px;padding:4px 12px;font-weight:600;font-size:13px}
+.hb h1{font-size:clamp(42px,7vw,92px);line-height:.95;letter-spacing:-.045em;font-weight:800;margin:16px 0 14px}
+.meta{display:flex;gap:18px;color:#d3dbf2;font-weight:600}.meta span+span{padding-left:18px;border-left:1px solid rgba(255,255,255,.3)}
+.hb p{color:#c3cce8;max-width:520px;margin:14px 0 24px;font-size:16px}
+.btns{display:flex;gap:12px;align-items:center}
+.btn{border:0;border-radius:10px;padding:13px 28px;font-weight:700;background:var(--blue);transition:transform .15s,background .2s}
+.btn:hover{background:#4a8dff;transform:translateY(-1px)}
+.btn.ghost{background:rgba(255,255,255,.12)}.btn.ghost:hover{background:rgba(255,255,255,.2)}
+#dots{position:absolute;z-index:3;right:4vw;bottom:96px;display:flex;gap:8px}
+#dots button{width:26px;height:5px;border:0;border-radius:3px;background:rgba(255,255,255,.28);padding:0;transition:.3s}
+#dots button.on{width:44px;background:var(--blue2)}
+.strip{position:relative;z-index:4;display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin:-64px 4vw 10px}
+.tile{background:rgba(18,24,48,.82);backdrop-filter:blur(10px);border:1px solid var(--line);border-radius:14px;padding:16px 18px}
+.tile b{display:block;font-size:26px;font-weight:800;letter-spacing:-.02em}.tile span{color:var(--mu);font-size:13px}
+.rail h3{margin:26px 4vw 0;font-size:21px;font-weight:700;letter-spacing:-.02em}.rail h3 small{margin-left:12px;color:var(--mu);font-size:13px;font-weight:500;letter-spacing:0}
+.wrap{position:relative}
+.row{display:flex;gap:14px;overflow-x:auto;padding:16px 4vw 34px;scroll-snap-type:x proximity;scrollbar-width:none}.row::-webkit-scrollbar{display:none}
+.arr{position:absolute;top:16px;bottom:34px;width:4vw;min-width:44px;border:0;color:#fff;font-size:36px;opacity:0;transition:opacity .2s;z-index:6}
+.wrap:hover .arr{opacity:1}.arr.l{left:0;background:linear-gradient(90deg,rgba(10,14,26,.95),transparent)}.arr.r{right:0;background:linear-gradient(270deg,rgba(10,14,26,.95),transparent)}
+.card{position:relative;flex:0 0 168px;height:252px;padding:0;border:0;background:none;border-radius:12px;text-align:left;scroll-snap-align:start;transition:transform .25s,box-shadow .25s}
+.card.rkd{flex-basis:250px}
+.card:hover,.card:focus-visible{transform:scale(1.08);z-index:5;box-shadow:0 18px 44px rgba(0,0,0,.65),0 0 0 2px var(--blue2)}
+.rk{position:absolute;left:-2px;bottom:-6px;font:800 150px/1 var(--f);letter-spacing:-.08em;color:transparent;-webkit-text-stroke:3px rgba(255,255,255,.5)}
+.poster{position:absolute;inset:0;border-radius:12px;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end;padding:14px;background:radial-gradient(120% 70% at 20% 0%,hsl(var(--h) 80% 55%/.9),transparent 60%),linear-gradient(160deg,hsl(calc(var(--h) + 25) 65% 32%),hsl(var(--h) 60% 10%))}
+.rkd .poster{left:80px}
+.g{position:absolute;top:12px;left:12px;font-size:11px;font-weight:600;padding:3px 10px;border-radius:99px;background:rgba(0,0,0,.35);backdrop-filter:blur(4px)}
+.poster strong{font-size:19px;line-height:1.08;font-weight:800;letter-spacing:-.025em;transition:transform .25s}
+.poster small{color:rgba(255,255,255,.72);font-size:12px;margin-top:4px;transition:transform .25s}
+.inf{position:absolute;left:0;right:0;bottom:0;padding:50px 14px 12px;font-size:12px;font-weight:600;line-height:1.35;background:linear-gradient(0deg,rgba(5,8,18,.96),transparent);opacity:0;transform:translateY(8px);transition:.25s}
+.card:hover .inf,.card:focus-visible .inf{opacity:1;transform:none}
+.card:hover strong,.card:hover small,.card:focus-visible strong,.card:focus-visible small{transform:translateY(-34px)}
+.sec{padding:96px 4vw 60px}.sec h2{font-size:30px;letter-spacing:-.03em;margin:0 0 4px}.sec>p{color:var(--mu);margin:0 0 22px}
+.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:16px}
+.panel{grid-column:span 12;background:var(--s1);border:1px solid var(--line);border-radius:16px;padding:20px;min-width:0}
+.w4{grid-column:span 4}.w5{grid-column:span 5}.w6{grid-column:span 6}.w7{grid-column:span 7}.w8{grid-column:span 8}.w3{grid-column:span 3}
+.panel h3{margin:0;font-size:17px}.note{color:var(--mu);font-size:13px;margin:2px 0 14px}.chart{position:relative;height:260px}
+table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:10px 8px;border-bottom:1px solid var(--line);font-size:14px}th{color:var(--mu);font-weight:600}
+tbody tr{transition:background .15s}tbody tr:hover{background:rgba(255,255,255,.04)}
+.heat td{text-align:center;border:3px solid var(--s1);border-radius:8px;font-weight:600}.heat td:first-child,.heat td:nth-child(2){text-align:left;border-radius:0}
+.pill{padding:3px 11px;border-radius:99px;font-size:12px;font-weight:700;color:#0a0e1a}.High{background:var(--hi)}.Medium{background:var(--mid)}.Low{background:var(--lo)}
+.who{display:flex;align-items:center;gap:10px}.av{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:13px;flex:none;background:linear-gradient(135deg,hsl(var(--h) 80% 55%),hsl(calc(var(--h) + 40) 70% 35%))}
+.av.big{width:76px;height:76px;font-size:28px}
+.stat b{display:block;font-size:30px;font-weight:800;letter-spacing:-.03em}.stat span{color:var(--mu);font-size:13px}
+.search{display:flex;gap:10px;max-width:480px;margin-bottom:26px}
+.search input{flex:1;background:var(--s1);border:1px solid var(--line);border-radius:99px;padding:12px 20px}
+.prof{display:flex;gap:20px;align-items:center;flex-wrap:wrap}.prof h2{margin:0;font-size:28px}.mu{color:var(--mu)}
+.gb{display:flex;align-items:center;gap:12px;margin:7px 0}.gb span:first-child{width:110px;color:var(--mu)}.gb i{display:block;height:8px;border-radius:4px;background:linear-gradient(90deg,var(--blue),var(--blue2))}
+dialog{border:1px solid var(--line);background:var(--s1);color:var(--tx);border-radius:20px;padding:0;width:min(560px,92vw);overflow:hidden}
+dialog::backdrop{background:rgba(3,5,12,.72);backdrop-filter:blur(5px)}
+.mh{position:relative;padding:80px 28px 22px;background:radial-gradient(120% 120% at 15% 0%,hsl(var(--h) 80% 50%/.8),transparent 70%),hsl(var(--h) 50% 12%)}
+.mh h2{margin:0;font-size:34px;letter-spacing:-.04em;line-height:1}.mh p{margin:8px 0 0;color:#d3dbf2}
+.x{position:absolute;top:14px;right:14px;width:36px;height:36px;border-radius:50%;border:0;background:rgba(0,0,0,.4)}
+.mg{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:20px 28px 8px}.mg b{display:block;font-size:22px;font-weight:800}.mg span{font-size:12px;color:var(--mu)}
+.mb{margin:6px 28px;height:8px;background:var(--s2);border-radius:4px;overflow:hidden}.mb div{height:100%;background:linear-gradient(90deg,var(--blue),var(--blue2));border-radius:4px}
+.mn{margin:14px 28px 26px;color:#c3cce8}
+@media(max-width:900px){.strip{grid-template-columns:repeat(2,1fr)}.w3,.w4,.w5,.w6,.w7,.w8{grid-column:span 12}.nav{flex-wrap:wrap;gap:10px}.filters{width:100%}.mg{grid-template-columns:repeat(2,1fr)}.hero{padding-bottom:120px}#dots{bottom:90px}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style></head><body>
+<header class="nav" id="nav">
+ <div class="brand"><svg viewBox="0 0 40 40" aria-hidden="true"><defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5aa2ff"/><stop offset="1" stop-color="#2d4bff"/></linearGradient></defs><circle cx="20" cy="20" r="19" fill="url(#lg)"/><path d="M20 8l3.4 8 8.6.8-6.5 5.7 2 8.5L20 26.2 12.5 31l2-8.5L8 16.8l8.6-.8z" fill="#fff"/></svg>StarView <em>Analytics</em></div>
+ <nav id="tabs"><button data-p="home" class="on">Home</button><button data-p="rev">Revenue</button><button data-p="risk">Retention and risk</button><button data-p="subs">Subscribers</button></nav>
+ <div class="filters"><select id="fp" aria-label="Plan"><option value="">All plans</option></select><select id="fc" aria-label="City"><option value="">All cities</option></select></div>
+</header>
+<main>
+<section class="page on" id="home">
+ <div class="hero" id="hero"><div class="wm" id="hw"></div>
+  <div class="hb" id="hb"><span class="rank" id="hr"></span><h1 id="ht"></h1><div class="meta" id="hm"></div><p id="hd"></p>
+   <div class="btns"><button class="btn" id="hmore">See audience</button><button class="btn ghost" id="hnext">Next title</button></div></div>
+  <div id="dots"></div></div>
+ <div class="strip" id="strip"></div><div id="rails"></div>
+</section>
+<section class="page sec" id="rev"><h2>Revenue</h2><p>What comes in, which plan earns it, and whether the audience is growing.</p><div class="grid">
+ <div class="panel w8"><h3>Revenue by plan</h3><p class="note">Payments received each month.</p><div class="chart"><canvas id="c1"></canvas></div></div>
+ <div class="panel w4"><h3>Churn by plan</h3><p class="note">Share of subscribers who cancelled.</p><div class="chart"><canvas id="c2"></canvas></div></div>
+ <div class="panel w7"><h3>New and cancelled subscribers</h3><p class="note">Growth needs the blue line to stay above the red one.</p><div class="chart"><canvas id="c3"></canvas></div></div>
+ <div class="panel w5"><h3>Hours watched by genre</h3><p class="note">Where viewing time goes.</p><div class="chart"><canvas id="c4"></canvas></div></div></div></section>
+<section class="page sec" id="risk"><h2>Retention and risk</h2><p>Who stays, and who is about to leave.</p><div class="grid">
+ <div class="panel w3 stat"><b id="r1"></b><span>High-risk subscribers</span></div><div class="panel w3 stat"><b id="r2"></b><span>Medium risk</span></div>
+ <div class="panel w3 stat"><b id="r4"></b><span>Monthly revenue at risk</span></div>
+ <div class="panel w3"><a id="dl" href="#"><button class="btn">Download call list</button></a><p class="note" style="margin:8px 0 0">High and medium risk, as CSV.</p></div>
+ <div class="panel"><h3>Retention by signup quarter</h3><p class="note">Share of each group still subscribed after 1, 3, 6, 9 and 12 months. Brighter is better, blank means too recent to measure.</p>
+  <table class="heat"><thead><tr><th>Signed up</th><th>Size</th><th>1 month</th><th>3 months</th><th>6 months</th><th>9 months</th><th>12 months</th></tr></thead><tbody id="co"></tbody></table></div>
+ <div class="panel"><h3>Most likely to leave</h3><p class="note">Score from days since last watch, plan type and viewing in the last two months. Select a name to open the profile.</p>
+  <table><thead><tr><th>Subscriber</th><th>Plan</th><th>City</th><th>Days idle</th><th>Risk</th></tr></thead><tbody id="rk"></tbody></table></div></div></section>
+<section class="page sec" id="subs"><h2>Subscribers</h2><p>Look up anyone by ID, from 1 to 1500.</p>
+ <div class="search"><input id="sid" type="number" min="1" max="1500" value="1" aria-label="Subscriber ID"><button class="btn" id="find">Look up</button></div><div id="res"></div></section>
+</main>
+<dialog id="dlg"></dialog>
+<script>
+const $=id=>document.getElementById(id),$$=s=>[...document.querySelectorAll(s)];
+const inr=n=>"₹"+Math.round(n).toLocaleString("en-IN"),num=n=>Math.round(n).toLocaleString("en-IN");
+const HUE={Drama:265,Comedy:42,Thriller:352,Action:14,Romance:322,"Sci-Fi":200,Documentary:152,Kids:96};
+const hue=(g,t="")=>HUE[g]??([...t].reduce((a,c)=>a+c.charCodeAt(0),0)%360);
+const reduce=matchMedia("(prefers-reduced-motion:reduce)").matches;
+const name=c=>c.title.replace(/ \d+$/,""),initials=s=>s.split(/\s+/).map(w=>w[0]).join("").slice(0,2).toUpperCase(),esc=s=>String(s).replace(/"/g,"&quot;");
+let cat=[],K={},charts={},slide=0,timer;
+if(window.Chart){Chart.defaults.color="#93a0c4";Chart.defaults.borderColor="rgba(255,255,255,.07)";Chart.defaults.font.family='"Plus Jakarta Sans",system-ui'}
+const qs=()=>new URLSearchParams({...($("fp").value&&{plan:$("fp").value}),...($("fc").value&&{city:$("fc").value})}).toString();
+const get=(n,x="")=>fetch(`/api/${n}?${qs()}${x}`).then(r=>r.json());
+const draw=(id,type,labels,sets,o={})=>{if(!window.Chart)return;charts[id]?.destroy();charts[id]=new Chart($(id),{type,data:{labels,datasets:sets},options:{responsive:true,maintainAspectRatio:false,...o}})};
+function count(el,v,f){if(reduce){el.textContent=f(v);return}const t0=performance.now();(function s(t){const p=Math.min(1,(t-t0)/800);el.textContent=f(v*(1-Math.pow(1-p,3)));if(p<1)requestAnimationFrame(s)})(t0)}
+function poster(c,rank){
+ const inf=c.sub||`${num(c.hours)} h watched`+(c.viewers!=null?`<br>${num(c.viewers)} viewers`:"");
+ return `<button class="card${rank?" rkd":""}" data-t="${esc(c.title)}" style="--h:${hue(c.genre,c.title)}">${rank?`<i class="rk">${rank}</i>`:""}<span class="poster"><b class="g">${c.genre}</b><strong>${name(c)}</strong><small>${[c.type,c.release_year].filter(Boolean).join("   ")}</small><span class="inf">${inf}</span></span></button>`}
+const rail=(t,s,items,ranked)=>items.length?`<section class="rail"><h3>${t}<small>${s}</small></h3><div class="wrap"><button class="arr l" aria-label="Scroll left">‹</button><div class="row">${items.map((c,i)=>poster(c,ranked&&i+1)).join("")}</div><button class="arr r" aria-label="Scroll right">›</button></div></section>`:"";
+function hero(i){
+ const c=cat[i],b=$("hb");
+ if(!c){$("ht").textContent="No viewing yet";$("hd").textContent="Nothing has been watched for this filter.";$("hm").innerHTML="";$("hr").textContent="";$("hw").textContent="";return}
+ slide=i;b.classList.add("out");
+ setTimeout(()=>{const pct=Math.round(100*c.viewers/Math.max(K.total,1));
+  $("hero").style.setProperty("--h",hue(c.genre,c.title));$("hw").textContent=initials(name(c));$("ht").textContent=name(c);
+  $("hm").innerHTML=`<span>${c.genre}</span><span>${c.type}</span><span>${c.release_year}</span>`;
+  $("hr").textContent=`No. ${i+1} by hours watched`;
+  $("hd").textContent=`${num(c.viewers)} of ${num(K.total)} subscribers have watched this ${c.type.toLowerCase()}, for ${num(c.hours)} hours in total. That reaches ${pct}% of the audience.`;
+  $$("#dots button").forEach((d,j)=>d.classList.toggle("on",j===i));$("hmore").onclick=()=>openModal(c);b.classList.remove("out")},reduce?0:260)}
+function startHero(){const n=Math.min(4,cat.length);$("dots").innerHTML=Array.from({length:n},(_,i)=>`<button aria-label="Show title ${i+1}"></button>`).join("");
+ $$("#dots button").forEach((d,i)=>d.onclick=()=>{hero(i);startHero2(n)});$("hnext").onclick=()=>{hero((slide+1)%Math.max(n,1));startHero2(n)};hero(0);startHero2(n)}
+function startHero2(n){clearInterval(timer);if(!reduce&&n>1)timer=setInterval(()=>hero((slide+1)%n),7000)}
+function openModal(c){
+ const pct=Math.round(100*c.viewers/Math.max(K.total,1)),avg=cat.reduce((a,x)=>a+x.hours,0)/Math.max(cat.reduce((a,x)=>a+x.viewers,0),1),hpv=c.hours/Math.max(c.viewers,1),d=Math.round(100*(hpv-avg)/avg);
+ $("dlg").innerHTML=`<div class="mh" style="--h:${hue(c.genre,c.title)}"><button class="x" onclick="dlg.close()" aria-label="Close">✕</button><h2>${name(c)}</h2><p>${c.genre}, ${c.type}, ${c.release_year}</p></div>
+ <div class="mg"><div><b>${num(c.hours)}</b><span>hours watched</span></div><div><b>${num(c.viewers)}</b><span>viewers</span></div><div><b>${hpv.toFixed(1)}</b><span>hours per viewer</span></div><div><b>${pct}%</b><span>of subscribers</span></div></div>
+ <div class="mb"><div style="width:${pct}%"></div></div>
+ <p class="mn">Viewers spend ${Math.abs(d)}% ${d>=0?"more":"less"} time on this ${c.type.toLowerCase()} than on the average title.</p>`;$("dlg").showModal()}
+async function load(){
+ const [k,c,gen,rev,gr,chp,co,rk]=await Promise.all(["kpis","catalog","genres","revenue_by_plan","growth","churn_plan","cohort","risk"].map(n=>get(n)));
+ K=k;cat=c;
+ const tiles=[["Total subscribers",k.total,num],["Active now",k.active,num],["Churn rate",k.churn_rate,v=>v.toFixed(1)+"%"],["Monthly recurring revenue",k.mrr,inr],["Revenue per subscriber",k.revenue_per_sub,inr],["Hours per viewer",k.hours_per_viewer,v=>v.toFixed(1)]];
+ $("strip").innerHTML=tiles.map(t=>`<div class="tile"><b></b><span>${t[0]}</span></div>`).join("");$$("#strip b").forEach((b,i)=>count(b,tiles[i][1],tiles[i][2]));
+ const avg=x=>x.hours/Math.max(x.viewers,1);
+ $("rails").innerHTML=rail("Top 10 on StarView","by hours watched",cat.slice(0,10),true)+rail("Binge-worthy series","most hours watched",cat.filter(x=>x.type==="Series").slice(0,12))
+  +rail("Movies people finish","most hours watched",cat.filter(x=>x.type==="Movie").slice(0,12))+rail("Small audience, big commitment","most hours per viewer",cat.filter(x=>x.viewers>=15).sort((a,b)=>avg(b)-avg(a)).slice(0,12))
+  +gen.slice(0,2).map(g=>rail(`Best of ${g.genre}`,`${num(g.hours)} hours watched`,cat.filter(x=>x.genre===g.genre).slice(0,12))).join("");
+ startHero();
+ const months=[...new Set(rev.map(r=>r.month))],pc={Basic:"#34d1bf",Standard:"#5aa2ff",Premium:"#a78bfa"};
+ draw("c1","bar",months,Object.keys(pc).map(p=>({label:p,backgroundColor:pc[p],data:months.map(m=>rev.find(r=>r.month===m&&r.plan===p)?.revenue||0)})),{scales:{x:{stacked:true},y:{stacked:true}}});
+ draw("c2","bar",chp.map(r=>r.plan),[{data:chp.map(r=>r.churn_pct),backgroundColor:["#ff4d6a","#ffb02e","#1fd1b0"],borderRadius:8}],{plugins:{legend:{display:false}}});
+ const gm=[...new Set([...gr.signups,...gr.churned].map(r=>r.month))].sort(),pick=a=>gm.map(m=>a.find(r=>r.month===m)?.n||0);
+ draw("c3","line",gm,[{label:"New",data:pick(gr.signups),borderColor:"#5aa2ff",backgroundColor:"rgba(45,123,255,.18)",fill:true,tension:.35,pointRadius:0},{label:"Cancelled",data:pick(gr.churned),borderColor:"#ff4d6a",tension:.35,pointRadius:0}]);
+ draw("c4","bar",gen.map(r=>r.genre),[{data:gen.map(r=>r.hours),backgroundColor:gen.map(r=>`hsl(${hue(r.genre)} 75% 58%)`),borderRadius:6}],{indexAxis:"y",plugins:{legend:{display:false}}});
+ const s=rk.summary;$("r1").textContent=s.high;$("r2").textContent=s.medium;$("r4").textContent=inr(s.revenue_at_risk);$("dl").href="/api/at_risk.csv?"+qs();
+ $("co").innerHTML=co.map(x=>`<tr><td>${x.cohort}</td><td>${x.size}</td>`+["m1","m3","m6","m9","m12"].map(m=>x[m]==null?"<td></td>":`<td style="background:rgba(45,123,255,${(x[m]/100)**3*.9+.08})">${x[m]}%</td>`).join("")+"</tr>").join("");
+ $("rk").innerHTML=rk.rows.map(r=>`<tr><td><a href="#" class="who" style="color:inherit;text-decoration:none;--h:${hue(null,r.name)}" onclick="showSub(${r.sub_id});return false"><span class="av">${initials(r.name)}</span>${r.name}</a></td><td>${r.plan}</td><td>${r.city}</td><td>${r.days_idle}</td><td><span class="pill ${r.level}">${r.score} ${r.level}</span></td></tr>`).join("")}
+function showSub(id){$("sid").value=id;go("subs");find()}
+async function find(){
+ const d=await get("subscriber","&id="+(+$("sid").value||1));if(d.error){$("res").innerHTML=`<p class="mu">${d.error}</p>`;return}
+ const i=d.info,mx=Math.max(1,...d.genres.map(g=>g.hours));
+ const recent=d.recent.map(r=>({title:r.title,genre:(cat.find(c=>c.title===r.title)||{}).genre||"Drama",sub:`${r.watch_date}<br>${r.minutes} min`}));
+ $("res").innerHTML=`<div class="prof" style="--h:${hue(null,i.name)}"><span class="av big">${initials(i.name)}</span><div><h2>${i.name}</h2><div class="mu">#${i.sub_id}, ${i.city}, age ${i.age}. Joined ${i.signup_date}. ${i.status==="Churned"?"Cancelled on "+i.churn_date+".":"Active."}</div></div>
+  ${d.risk?`<span class="pill ${d.risk.level}" style="margin-left:auto">Churn risk ${d.risk.score}, ${d.risk.level}</span>`:""}</div>
+ <div class="grid" style="margin-top:22px"><div class="panel w3 stat"><b>${i.plan}</b><span>${inr(i.price)} per month</span></div><div class="panel w3 stat"><b>${inr(d.total_paid)}</b><span>paid so far</span></div>
+  <div class="panel w6"><h3>Favourite genres</h3>${d.genres.map(g=>`<div class="gb"><span>${g.genre}</span><i style="width:${g.hours/mx*60}%"></i><span>${g.hours} h</span></div>`).join("")||'<p class="note">No viewing yet.</p>'}</div></div>
+ ${rail("Continue watching","last 5 titles",recent)}${rail("Recommended next","popular in their favourite genre",d.recommended)}`}
+function go(p){$$("#tabs button").forEach(x=>x.classList.toggle("on",x.dataset.p===p));$$(".page").forEach(s=>s.classList.toggle("on",s.id===p));scrollTo({top:0,behavior:reduce?"auto":"smooth"})}
+$$("#tabs button").forEach(b=>b.onclick=()=>go(b.dataset.p));
+document.addEventListener("click",e=>{const a=e.target.closest(".arr");if(a){const row=a.parentElement.querySelector(".row");row.scrollBy({left:(a.classList.contains("r")?1:-1)*row.clientWidth*.8,behavior:"smooth"});return}
+ const c=e.target.closest(".card");if(c){const it=cat.find(x=>x.title===c.dataset.t);if(it)openModal(it)}});
+addEventListener("scroll",()=>$("nav").classList.toggle("solid",scrollY>40));
+$("find").onclick=find;$("sid").onkeydown=e=>{if(e.key==="Enter")find()};$("fp").onchange=$("fc").onchange=()=>{load();find()};
+(async()=>{const f=await get("filters");f.plans.forEach(p=>$("fp").add(new Option(p,p)));f.cities.forEach(c=>$("fc").add(new Option(c,c)));await load();find()})();
+</script></body></html>
